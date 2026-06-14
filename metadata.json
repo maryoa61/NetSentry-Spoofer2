@@ -1,0 +1,6 @@
+{
+  "name": "NetSentry Spoofer",
+  "description": "اسکنر پرسرعت آی‌پی تمیز، موتور شبیه‌ساز SNI، ابزار تست و بهینه‌سازی نودهای V2Ray و ابزار تولید کانفیگ با طراحی تاریک IDE",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
