@@ -1,40 +1,17 @@
-name: Android Build
+name: Find Gradle
 on: [push]
 
 jobs:
-  build:
+  find-gradle:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: List all files to find gradlew
-        run: find . -name "gradlew"
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-      
-      - name: Grant execute permission and Build
+      - name: Search for gradlew file
         run: |
-          # پیدا کردن و مجوز دادن به فایل gradlew در هر پوشه‌ای که هست
-          GRADLE_PATH=$(find . -name "gradlew" | head -n 1)
-          if [ -z "$GRADLE_PATH" ]; then
-            echo "Error: gradlew not found!"
-            exit 1
-          fi
-          chmod +x "$GRADLE_PATH"
+          echo "Looking for gradlew in the whole repository..."
+          find . -name "gradlew" -print
           
-          # اجرای بیلد ریلیز
-          "$GRADLE_PATH" assembleRelease
-        env:
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: app/build/outputs/apk/release/
+          echo "---"
+          echo "Current directory structure:"
+          ls -R
