@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [CleanIpEntity::class, V2RayNodeEntity::class, UserProfileEntity::class, VpnSubscriptionEntity::class], version = 2, exportSchema = false)
+@Database(entities = [CleanIpEntity::class, V2RayNodeEntity::class, UserProfileEntity::class, VpnSubscriptionEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cleanIpDao(): CleanIpDao
     abstract fun v2rayNodeDao(): V2RayNodeDao

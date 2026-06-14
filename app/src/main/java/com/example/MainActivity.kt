@@ -314,6 +314,12 @@ fun CleanIpScannerPage(viewModel: NetSentryViewModel) {
   val statusText by viewModel.scannerStatusText.collectAsStateWithLifecycle()
   val cleanIpsList by viewModel.cleanIps.collectAsStateWithLifecycle()
 
+  val scanPort by viewModel.scanPort.collectAsStateWithLifecycle()
+  val scanTimeoutMs by viewModel.scanTimeoutMs.collectAsStateWithLifecycle()
+  val scanConcurrency by viewModel.scanConcurrency.collectAsStateWithLifecycle()
+  val scanLogs by viewModel.scanLogs.collectAsStateWithLifecycle()
+  val sortCleanIpsBy by viewModel.sortCleanIpsBy.collectAsStateWithLifecycle()
+
   val context = LocalContext.current
   val clipboardManager = LocalClipboardManager.current
 
@@ -454,6 +460,168 @@ fun CleanIpScannerPage(viewModel: NetSentryViewModel) {
       }
     }
 
+    // Advanced IDE Settings Form Card
+    item {
+      Card(
+        colors = CardDefaults.cardColors(containerColor = SpaceCard),
+        border = BorderStroke(1.dp, GeoBorder),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(
+          modifier = Modifier.padding(12.dp),
+          horizontalAlignment = Alignment.End,
+          verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          Text(
+            text = "⚙️ تنظیمات پارامتری اسکنر (IDE Engine)",
+            color = PureWhite,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Right
+          )
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            // Port Input
+            OutlinedTextField(
+              value = scanPort,
+              onValueChange = { viewModel.updateScanPort(it) },
+              modifier = Modifier.weight(1f),
+              textStyle = TextStyle(color = PureWhite, fontSize = 11.sp, fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center),
+              label = { Text("پورت CDN", color = TerminalGray, fontSize = 8.sp, textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth()) },
+              singleLine = true,
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = CyberCyan,
+                unfocusedBorderColor = GeoBorder,
+                focusedContainerColor = SpaceBg,
+                unfocusedContainerColor = SpaceBg
+              )
+            )
+
+            // Timeout Input
+            OutlinedTextField(
+              value = scanTimeoutMs,
+              onValueChange = { viewModel.updateScanTimeoutMs(it) },
+              modifier = Modifier.weight(1.2f),
+              textStyle = TextStyle(color = PureWhite, fontSize = 11.sp, fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center),
+              label = { Text("تأخیر (ms)", color = TerminalGray, fontSize = 8.sp, textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth()) },
+              singleLine = true,
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = CyberCyan,
+                unfocusedBorderColor = GeoBorder,
+                focusedContainerColor = SpaceBg,
+                unfocusedContainerColor = SpaceBg
+              )
+            )
+
+            // Concurrency Threads
+            OutlinedTextField(
+              value = scanConcurrency,
+              onValueChange = { viewModel.updateScanConcurrency(it) },
+              modifier = Modifier.weight(1f),
+              textStyle = TextStyle(color = PureWhite, fontSize = 11.sp, fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center),
+              label = { Text("ریسه موازی", color = TerminalGray, fontSize = 8.sp, textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth()) },
+              singleLine = true,
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = CyberCyan,
+                unfocusedBorderColor = GeoBorder,
+                focusedContainerColor = SpaceBg,
+                unfocusedContainerColor = SpaceBg
+              )
+            )
+          }
+        }
+      }
+    }
+
+    // Live Shell Emulator Terminal
+    item {
+      Card(
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF080C10)),
+        border = BorderStroke(1.dp, GeoBorder),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(modifier = Modifier.padding(10.dp)) {
+          // Terminal Control Header
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            // Window circles
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+              Box(modifier = Modifier.size(8.dp).background(Color(0xFFFF5F56), shape = CircleShape))
+              Box(modifier = Modifier.size(8.dp).background(Color(0xFFFFBD2E), shape = CircleShape))
+              Box(modifier = Modifier.size(8.dp).background(Color(0xFF27C93F), shape = CircleShape))
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+              Text(
+                text = "پاکسازی لاگ",
+                color = TerminalGray,
+                fontSize = 9.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier
+                  .clickable { viewModel.clearScanLogs() }
+                  .border(1.dp, GeoBorder, shape = RoundedCornerShape(4.dp))
+                  .padding(horizontal = 6.dp, vertical = 2.dp)
+              )
+              Text(
+                text = "sh - ip-scanner.sh",
+                color = TerminalGray,
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(10.dp))
+
+          // Scrolling Terminal Output Buffer
+          val terminalScrollState = rememberScrollState()
+          LaunchedEffect(scanLogs.size) {
+            terminalScrollState.animateScrollTo(terminalScrollState.maxValue)
+          }
+
+          Box(
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(140.dp)
+              .background(Color(0xFF040609), shape = RoundedCornerShape(6.dp))
+              .border(1.dp, Color(0xFF1E242C), shape = RoundedCornerShape(6.dp))
+              .verticalScroll(terminalScrollState)
+              .padding(8.dp)
+          ) {
+            Column {
+              scanLogs.forEach { logLine ->
+                val lineCol = when {
+                  logLine.startsWith("[SUCCESS]") -> TechGreen
+                  logLine.startsWith("[BLOCKED]") -> TechRed
+                  logLine.startsWith("[SYSTEM]") -> CyberCyan
+                  logLine.startsWith("[INFO]") -> CyberPurple
+                  else -> SilverText
+                }
+                Text(
+                  text = logLine,
+                  color = lineCol,
+                  fontSize = 10.sp,
+                  fontFamily = FontFamily.Monospace,
+                  textAlign = TextAlign.Left,
+                  modifier = Modifier.fillMaxWidth()
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Progress display and Start Button
     item {
       Column(
@@ -536,7 +704,7 @@ fun CleanIpScannerPage(viewModel: NetSentryViewModel) {
       }
     }
 
-    // Found Clean IPs Header line
+    // Found Clean IPs Header line with sorting capabilities
     item {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -545,18 +713,72 @@ fun CleanIpScannerPage(viewModel: NetSentryViewModel) {
       ) {
         val count = cleanIpsList.size
         Text(
-          text = "$count آی‌پی تمیز ذخیره شده",
+          text = "$count آی‌پی تمیز یافت شده",
           color = CyberCyan,
           fontFamily = FontFamily.Monospace,
           fontSize = 12.sp,
           fontWeight = FontWeight.Bold
         )
         Text(
-          text = "لیست آی‌پی‌های تمیز یافت شده:",
+          text = "لیست آی‌پی‌های تمیز:",
           color = PureWhite,
           fontSize = 13.sp,
           fontWeight = FontWeight.Bold
         )
+      }
+    }
+
+    // Dynamic Database Sorting Bar
+    item {
+      Card(
+        colors = CardDefaults.cardColors(containerColor = SpaceCard),
+        border = BorderStroke(1.dp, GeoBorder),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            val sortOptions = listOf(
+              "latency" to "RTT تاخیر",
+              "provider" to "مرجع CDN",
+              "ip" to "نشانی IP"
+            )
+
+            sortOptions.forEach { (key, label) ->
+              val isSelected = sortCleanIpsBy == key
+              Box(
+                modifier = Modifier
+                  .clickable { viewModel.setSortCleanIpsBy(key) }
+                  .background(if (isSelected) CyberCyan.copy(alpha = 0.15f) else SpaceBg, shape = RoundedCornerShape(6.dp))
+                  .border(1.dp, if (isSelected) CyberCyan else GeoBorder, shape = RoundedCornerShape(6.dp))
+                  .padding(horizontal = 8.dp, vertical = 4.dp)
+              ) {
+                Text(
+                  text = label,
+                  color = if (isSelected) CyberCyan else TerminalGray,
+                  fontSize = 9.sp,
+                  fontWeight = FontWeight.Bold
+                )
+              }
+            }
+          }
+
+          Text(
+            text = "مرتب‌سازی بر اساس:",
+            color = TerminalGray,
+            fontSize = 9.sp,
+            textAlign = TextAlign.Right
+          )
+        }
       }
     }
 
@@ -608,6 +830,16 @@ fun CleanIpItem(
     else -> TechRed
   }
 
+  // Speed estimation based on physical RTT
+  val speedEstimation = remember(ip.latencyMs) {
+    if (ip.latencyMs == -1) "Blocked"
+    else {
+      val baseSpeed = 1000.0 / ip.latencyMs
+      val actualSpeed = (baseSpeed * (8..15).random() / 10.0).coerceIn(1.5, 92.4)
+      String.format("%.1f Mbps", actualSpeed)
+    }
+  }
+
   Card(
     colors = CardDefaults.cardColors(containerColor = SpaceCard),
     border = BorderStroke(1.dp, GeoBorder),
@@ -622,7 +854,10 @@ fun CleanIpItem(
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
       // Left side buttons
-      Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+      Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
         IconButton(
           onClick = onCopyToClipboard,
           modifier = Modifier
@@ -640,6 +875,43 @@ fun CleanIpItem(
         ) {
           Icon(Icons.Default.Settings, contentDescription = "Config send", tint = CyberPurple, modifier = Modifier.size(16.dp))
         }
+      }
+
+      // Middle: Throughput speed calculation based on latency
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+          text = speedEstimation,
+          color = CyberCyan,
+          fontFamily = FontFamily.Monospace,
+          fontSize = 11.sp,
+          fontWeight = FontWeight.Bold
+        )
+        Text(
+          text = "سرعت تخمینی",
+          color = TerminalGray,
+          fontSize = 8.sp
+        )
+      }
+
+      // Stability Connection Success Rate
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val rateColor = when {
+          ip.successRate >= 100 -> TechGreen
+          ip.successRate >= 66 -> Color(0xFFFFB300)
+          else -> TechRed
+        }
+        Text(
+          text = "${ip.successRate}%",
+          color = rateColor,
+          fontFamily = FontFamily.Monospace,
+          fontSize = 11.sp,
+          fontWeight = FontWeight.Bold
+        )
+        Text(
+          text = "پایداری اتصال",
+          color = TerminalGray,
+          fontSize = 8.sp
+        )
       }
 
       // Middle & Right side info

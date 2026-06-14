@@ -3,6 +3,8 @@ package com.example.data
 import android.content.Context
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.net.InetSocketAddress
 import java.net.Socket
 import javax.net.ssl.SSLSocketFactory
@@ -65,6 +67,9 @@ class AppRepository(
     suspend fun scanCleanIps(
         providers: List<String>,
         operatorName: String,
+        customPort: Int = 443,
+        timeoutMs: Int = 1500,
+        concurrencyLimit: Int = 10,
         onProgress: (Int, CleanIpEntity) -> Unit
     ) = withContext(Dispatchers.IO) {
         val targets = mutableListOf<Pair<String, String>>()
@@ -83,33 +88,57 @@ class AppRepository(
 
         var scannedCount = 0
         val total = targets.size
+        if (total == 0) return@withContext
+
+        val semaphore = Semaphore(concurrencyLimit)
 
         // Parallel scan using scope
         val jobs = targets.map { (ip, provider) ->
             async {
-                val ping = testTcpPing(ip, 443, 1500)
-                val status = when {
-                    ping == -1 -> "BLOCKED"
-                    ping <= 120 -> "OPTIMAL"
-                    ping <= 280 -> "CLEAN"
-                    else -> "SLOW"
-                }
-                
-                val entity = CleanIpEntity(
-                    ipAddress = ip,
-                    latencyMs = ping,
-                    provider = provider,
-                    operatorName = operatorName,
-                    status = status
-                )
+                semaphore.withPermit {
+                    val totalProbes = 3
+                    var successfulProbes = 0
+                    var totalLatency = 0
 
-                if (ping != -1) {
-                    insertCleanIp(entity)
-                }
+                    for (i in 0 until totalProbes) {
+                        val ping = testTcpPing(ip, customPort, timeoutMs)
+                        if (ping != -1) {
+                            successfulProbes++
+                            totalLatency += ping
+                        }
+                        if (i < totalProbes - 1) {
+                            delay(40) // fast consecutive probes
+                        }
+                    }
 
-                synchronized(this) {
-                    scannedCount++
-                    onProgress(scannedCount * 100 / total, entity)
+                    val rate = (successfulProbes * 100) / totalProbes
+                    val avgLatency = if (successfulProbes > 0) totalLatency / successfulProbes else -1
+
+                    val status = when {
+                        rate == 0 -> "BLOCKED"
+                        rate < 100 -> "UNSTABLE"
+                        avgLatency <= 120 -> "OPTIMAL"
+                        avgLatency <= 280 -> "CLEAN"
+                        else -> "SLOW"
+                    }
+                    
+                    val entity = CleanIpEntity(
+                        ipAddress = ip,
+                        latencyMs = avgLatency,
+                        provider = provider,
+                        operatorName = operatorName,
+                        status = status,
+                        successRate = rate
+                    )
+
+                    if (avgLatency != -1) {
+                        insertCleanIp(entity)
+                    }
+
+                    synchronized(this) {
+                        scannedCount++
+                        onProgress(scannedCount * 100 / total, entity)
+                    }
                 }
             }
         }

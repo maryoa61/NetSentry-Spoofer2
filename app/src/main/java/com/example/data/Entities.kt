@@ -11,7 +11,8 @@ data class CleanIpEntity(
     val provider: String, // Cloudflare, Akamai, Fastly, Cloudfront, Gcore
     val operatorName: String, // MCI (همراه اول), Irancell (ایرانسل), Rightel (رایتل), WiFi (مخابرات/سایر)
     val status: String, // CLEAN, OPTIMAL, SLOW, BLOCKED
-    val testTimestamp: Long = System.currentTimeMillis()
+    val testTimestamp: Long = System.currentTimeMillis(),
+    val successRate: Int = 100 // Connection success rate percentage, e.g. 100, 66, 33, 0
 )
 
 @Entity(tableName = "v2ray_nodes")

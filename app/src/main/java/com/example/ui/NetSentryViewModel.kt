@@ -17,8 +17,19 @@ class NetSentryViewModel(
     private val _sortNodesBy = MutableStateFlow("default") // "default", "ping", "speed", "rating"
     val sortNodesBy: StateFlow<String> = _sortNodesBy.asStateFlow()
 
+    // Sorting clean IPs state
+    private val _sortCleanIpsBy = MutableStateFlow("latency") // "latency", "provider", "ip"
+    val sortCleanIpsBy: StateFlow<String> = _sortCleanIpsBy.asStateFlow()
+
     // Reactive streams from database
     val cleanIps: StateFlow<List<CleanIpEntity>> = repository.allCleanIps
+        .combine(_sortCleanIpsBy) { list, sortBy ->
+            when (sortBy) {
+                "ip" -> list.sortedBy { it.ipAddress }
+                "provider" -> list.sortedBy { it.provider }
+                else -> list.sortedWith(compareBy { if (it.latencyMs == -1) Int.MAX_VALUE else it.latencyMs })
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val v2rayNodes: StateFlow<List<V2RayNodeEntity>> = repository.allNodes
@@ -53,6 +64,18 @@ class NetSentryViewModel(
 
     private val _scannerStatusText = MutableStateFlow("آماده جهت شروع اسکن")
     val scannerStatusText: StateFlow<String> = _scannerStatusText.asStateFlow()
+
+    private val _scanPort = MutableStateFlow("443")
+    val scanPort: StateFlow<String> = _scanPort.asStateFlow()
+
+    private val _scanTimeoutMs = MutableStateFlow("1500")
+    val scanTimeoutMs: StateFlow<String> = _scanTimeoutMs.asStateFlow()
+
+    private val _scanConcurrency = MutableStateFlow("10")
+    val scanConcurrency: StateFlow<String> = _scanConcurrency.asStateFlow()
+
+    private val _scanLogs = MutableStateFlow<List<String>>(listOf("[SYSTEM] Shell loaded. Welcome to ip-scanner.sh console."))
+    val scanLogs: StateFlow<List<String>> = _scanLogs.asStateFlow()
 
     // --- State for SNI Spoofer diagnostic Page ---
     private val _targetHost = MutableStateFlow("google.com")
@@ -193,22 +216,77 @@ class NetSentryViewModel(
         _scannedOperator.value = op
     }
 
+    fun updateScanPort(port: String) {
+        _scanPort.value = port
+    }
+
+    fun updateScanTimeoutMs(timeout: String) {
+        _scanTimeoutMs.value = timeout
+    }
+
+    fun updateScanConcurrency(concurrency: String) {
+        _scanConcurrency.value = concurrency
+    }
+
+    fun clearScanLogs() {
+        _scanLogs.value = listOf("[SYSTEM] Terminal buffer cleared.")
+    }
+
+    fun setSortCleanIpsBy(sortBy: String) {
+        _sortCleanIpsBy.value = sortBy
+    }
+
     fun startCdnScanner() {
         if (_isScanning.value) return
         _isScanning.value = true
         _scanProgress.value = 0
         _scannerStatusText.value = "شروع اتصال‌یابی به دامنه‌های مرجع CDN..."
 
+        val port = _scanPort.value.toIntOrNull() ?: 443
+        val timeout = _scanTimeoutMs.value.toIntOrNull() ?: 1500
+        val concurrency = _scanConcurrency.value.toIntOrNull() ?: 10
+        val operator = _scannedOperator.value
+        val providersList = _selectedProviders.value.toList()
+
+        val initialLogs = mutableListOf(
+            "[SYSTEM] Executing custom high-speed CDN IP scanner script...",
+            "[SYSTEM] Target network operator: $operator",
+            "[SYSTEM] Selected CDN providers: ${providersList.joinToString(", ")}",
+            "[SYSTEM] Parameters: port=$port, timeout=${timeout}ms, max_concurrency=$concurrency",
+            "[INFO] Clearing old clean IPs from local database...",
+            "----------------------------------------------------------------"
+        )
+        _scanLogs.value = initialLogs
+
         viewModelScope.launch {
             repository.clearCleanIps() // Clear previous results to reflect latest network state
             repository.scanCleanIps(
-                providers = _selectedProviders.value.toList(),
-                operatorName = _scannedOperator.value,
+                providers = providersList,
+                operatorName = operator,
+                customPort = port,
+                timeoutMs = timeout,
+                concurrencyLimit = concurrency,
                 onProgress = { progress, latestIp ->
                     _scanProgress.value = progress
                     _scannerStatusText.value = "آی‌پی سالم یافت شد: ${latestIp.ipAddress} (${latestIp.latencyMs}ms)"
+                    
+                    val formattedLog = if (latestIp.latencyMs != -1) {
+                        "[SUCCESS] Probed IP: ${latestIp.ipAddress} | Provider: ${latestIp.provider} | RTT: ${latestIp.latencyMs}ms | Success: ${latestIp.successRate}%"
+                    } else {
+                        "[BLOCKED] Probed IP: ${latestIp.ipAddress} | Provider: ${latestIp.provider} | Timeout / Refused (0%)"
+                    }
+                    val currentLogs = _scanLogs.value.toMutableList()
+                    currentLogs.add(formattedLog)
+                    if (currentLogs.size > 150) {
+                        currentLogs.removeAt(0)
+                    }
+                    _scanLogs.value = currentLogs
                 }
             )
+            val finalLogs = _scanLogs.value.toMutableList()
+            finalLogs.add("----------------------------------------------------------------")
+            finalLogs.add("[SYSTEM] Script execution completed successfully. Scanned clean IPs saved to database.")
+            _scanLogs.value = finalLogs
             _isScanning.value = false
             _scannerStatusText.value = "اسکن با موفقیت به پایان رسید. آی‌پی‌های تمیز ذخیره شدند."
         }
@@ -217,6 +295,7 @@ class NetSentryViewModel(
     fun clearScannedIps() {
         viewModelScope.launch {
             repository.clearCleanIps()
+            _scanLogs.value = listOf("[SYSTEM] Clean IPs database cleared. Terminal console reset.")
         }
     }
 
