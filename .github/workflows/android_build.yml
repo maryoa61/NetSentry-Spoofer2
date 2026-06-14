@@ -1,65 +1,32 @@
 name: Android Build
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      # Stap 1: Decodeer de keystore vanuit de GitHub Secret
+      - name: Decode Keystore
+        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.jks
 
-    - name: Optimize gradle.properties for CI
-      run: |
-        echo "Updating gradle.properties for CI..."
-        sed -i 's/kotlin.compiler.execution.strategy=in-process/kotlin.compiler.execution.strategy=daemon/g' gradle.properties
-        sed -i 's/org.gradle.configuration-cache=true/org.gradle.configuration-cache=false/g' gradle.properties
-        cat gradle.properties
+      # Stap 2: Bouw de release APK en geef de secrets door als omgevingsvariabelen
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        env:
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
-    - name: Prepare Debug and Release Keystores
-      run: |
-        if [ -f debug.keystore.base64 ]; then
-          echo "Decoding existing debug.keystore.base64..."
-          base64 -d debug.keystore.base64 > debug.keystore
-        else
-          echo "debug.keystore.base64 not found. Generating a new debug.keystore..."
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-        fi
-        
-        if [ -f my-upload-key.jks.base64 ]; then
-          echo "Decoding existing my-upload-key.jks.base64..."
-          base64 -d my-upload-key.jks.base64 > my-upload-key.jks
-        else
-          echo "my-upload-key.jks.base64 not found. Generating a new release my-upload-key.jks..."
-          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Release,O=Android,C=US"
-        fi
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
-
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-
-    - name: Build Release APK
-      run: gradle assembleRelease --no-configuration-cache -Pkotlin.compiler.execution.strategy=daemon -Porg.gradle.configuration-cache=false
-      env:
-        STORE_PASSWORD: "android"
-        KEY_PASSWORD: "android"
-
-    - name: Upload Release APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release-apk
-        path: app/build/outputs/apk/release/app-release.apk
+      # Stap 3: Upload de APK
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/
