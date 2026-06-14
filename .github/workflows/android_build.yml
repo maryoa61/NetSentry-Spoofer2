@@ -1,17 +1,10 @@
-name: Find Gradle
+name: Debug Files
 on: [push]
 
 jobs:
-  find-gradle:
+  debug-files:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Search for gradlew file
-        run: |
-          echo "Looking for gradlew in the whole repository..."
-          find . -name "gradlew" -print
-          
-          echo "---"
-          echo "Current directory structure:"
-          ls -R
+      - name: List EVERYTHING
+        run: ls -R
