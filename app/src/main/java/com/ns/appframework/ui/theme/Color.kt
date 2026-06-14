@@ -1,4 +1,4 @@
-package com.netsentry.spoof.ui.theme
+package com.ns.appframework.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -1,4 +1,4 @@
-package com.netsentry.spoof.data
+package com.ns.appframework.data
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow

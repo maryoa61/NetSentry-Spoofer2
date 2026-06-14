@@ -1,4 +1,4 @@
-package com.netsentry.spoof
+package com.ns.appframework
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -17,6 +17,6 @@ class ExampleInstrumentedTest {
   fun useAppContext() {
     // Context of the app under test.
     val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-    assertEquals("com.netsentry.spoof", appContext.packageName)
+    assertEquals("com.ns.appframework", appContext.packageName)
   }
 }

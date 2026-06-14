@@ -1,4 +1,4 @@
-package com.netsentry.spoof.data
+package com.ns.appframework.data
 
 import android.util.Base64
 import com.squareup.moshi.Moshi

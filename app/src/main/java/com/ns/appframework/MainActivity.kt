@@ -1,4 +1,4 @@
-package com.netsentry.spoof
+package com.ns.appframework
 
 import android.app.Application
 import android.os.Bundle
@@ -39,9 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.netsentry.spoof.data.*
-import com.netsentry.spoof.ui.*
-import com.netsentry.spoof.ui.theme.*
+import com.ns.appframework.data.*
+import com.ns.appframework.ui.*
+import com.ns.appframework.ui.theme.*
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {

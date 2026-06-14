@@ -1,9 +1,9 @@
-package com.netsentry.spoof
+package com.ns.appframework
 
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
-import com.netsentry.spoof.ui.theme.MyApplicationTheme
+import com.ns.appframework.ui.theme.MyApplicationTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule

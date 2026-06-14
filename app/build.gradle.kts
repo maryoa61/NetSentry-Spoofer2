@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-  namespace = "com.netsentry.spoof"
+  namespace = "com.ns.appframework"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.netsentry.spoof"
+    applicationId = "com.ns.appframework"
     minSdk = 24
     targetSdk = 36
     versionCode = 1

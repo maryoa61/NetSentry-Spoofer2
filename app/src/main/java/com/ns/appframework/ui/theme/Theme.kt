@@ -1,4 +1,4 @@
-package com.netsentry.spoof.ui.theme
+package com.ns.appframework.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

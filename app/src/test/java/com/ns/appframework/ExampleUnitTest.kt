@@ -1,4 +1,4 @@
-package com.netsentry.spoof
+package com.ns.appframework
 
 import org.junit.Assert.*
 import org.junit.Test

@@ -1,8 +1,8 @@
-package com.netsentry.spoof
+package com.ns.appframework
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.netsentry.spoof.R
+import com.ns.appframework.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -1,8 +1,8 @@
-package com.netsentry.spoof.ui
+package com.ns.appframework.ui
 
 import android.app.Application
 import androidx.lifecycle.*
-import com.netsentry.spoof.data.*
+import com.ns.appframework.data.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
