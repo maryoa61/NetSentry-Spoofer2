@@ -12,11 +12,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       
-      # Stap 1: Decodeer de keystore vanuit de GitHub Secret
+      # این مرحله کلیدت رو از Secrets می‌خونه و میذاره تو ریشه‌ی پروژه
       - name: Decode Keystore
         run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.jks
 
-      # Stap 2: Bouw de release APK en geef de secrets door als omgevingsvariabelen
+      # اینجا دستور رو مستقیم دادیم برای ریلیز
       - name: Build Release APK
         run: ./gradlew assembleRelease
         env:
@@ -24,7 +24,6 @@ jobs:
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
-      # Stap 3: Upload de APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
