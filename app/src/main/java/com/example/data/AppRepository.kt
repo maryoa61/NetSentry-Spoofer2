@@ -135,7 +135,7 @@ class AppRepository(
                         insertCleanIp(entity)
                     }
 
-                    synchronized(this) {
+                    synchronized(targets) {
                         scannedCount++
                         onProgress(scannedCount * 100 / total, entity)
                     }
