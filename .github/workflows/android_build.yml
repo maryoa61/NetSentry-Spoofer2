@@ -6,17 +6,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
       
-      # این مرحله کلیدت رو از Secrets می‌خونه و میذاره تو ریشه‌ی پروژه
+      # قبل از هر چیز، مجوز اجرای فایل gradlew را صادر کنید
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
       - name: Decode Keystore
         run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.jks
 
-      # اینجا دستور رو مستقیم دادیم برای ریلیز
       - name: Build Release APK
         run: ./gradlew assembleRelease
         env:
