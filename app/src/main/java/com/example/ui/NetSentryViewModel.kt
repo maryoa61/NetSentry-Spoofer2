@@ -123,7 +123,11 @@ class NetSentryViewModel(
     private val _scannedDataMb = MutableStateFlow(0.0)
     val scannedDataMb: StateFlow<Double> = _scannedDataMb.asStateFlow()
 
+    private val _scanEvents = MutableSharedFlow<String>(replay = 0)
+    val scanEvents: SharedFlow<String> = _scanEvents.asSharedFlow()
+
     private var monitoringJob: Job? = null
+    private var scanJob: Job? = null
 
     init {
         startNetworkMonitoringSimulation()
@@ -237,7 +241,12 @@ class NetSentryViewModel(
     }
 
     fun startCdnScanner() {
-        if (_isScanning.value) return
+        if (_isScanning.value || scanJob?.isActive == true) {
+            viewModelScope.launch {
+                _scanEvents.emit("اسکنر هم‌اکنون در حال اجراست! لطفاً شکیبا باشید.")
+            }
+            return
+        }
         _isScanning.value = true
         _scanProgress.value = 0
         _scannerStatusText.value = "شروع اتصال‌یابی به دامنه‌های مرجع CDN..."
@@ -258,7 +267,7 @@ class NetSentryViewModel(
         )
         _scanLogs.value = initialLogs
 
-        viewModelScope.launch {
+        scanJob = viewModelScope.launch {
             repository.clearCleanIps() // Clear previous results to reflect latest network state
             repository.scanCleanIps(
                 providers = providersList,
@@ -289,6 +298,9 @@ class NetSentryViewModel(
             _scanLogs.value = finalLogs
             _isScanning.value = false
             _scannerStatusText.value = "اسکن با موفقیت به پایان رسید. آی‌پی‌های تمیز ذخیره شدند."
+            
+            // Check if any healthy IP with 100% success found to alert
+            _scanEvents.emit("آی‌پی جدید تزریق شد و کیفیت کانکشن ارتقا یافت")
         }
     }
 

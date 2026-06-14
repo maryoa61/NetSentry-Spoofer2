@@ -323,6 +323,12 @@ fun CleanIpScannerPage(viewModel: NetSentryViewModel) {
   val context = LocalContext.current
   val clipboardManager = LocalClipboardManager.current
 
+  LaunchedEffect(Unit) {
+    viewModel.scanEvents.collect { message ->
+      android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+    }
+  }
+
   LazyColumn(
     modifier = Modifier
       .fillMaxSize()

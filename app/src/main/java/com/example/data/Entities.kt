@@ -5,8 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "clean_ips")
 data class CleanIpEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val ipAddress: String,
+    @PrimaryKey val ipAddress: String,
     val latencyMs: Int,
     val provider: String, // Cloudflare, Akamai, Fastly, Cloudfront, Gcore
     val operatorName: String, // MCI (همراه اول), Irancell (ایرانسل), Rightel (رایتل), WiFi (مخابرات/سایر)
