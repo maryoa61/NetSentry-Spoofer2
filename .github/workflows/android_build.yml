@@ -22,7 +22,6 @@ jobs:
         echo "Updating gradle.properties for CI..."
         sed -i 's/kotlin.compiler.execution.strategy=in-process/kotlin.compiler.execution.strategy=daemon/g' gradle.properties
         sed -i 's/org.gradle.configuration-cache=true/org.gradle.configuration-cache=false/g' gradle.properties
-        echo "ksp.useDaemon=false" >> gradle.properties
         cat gradle.properties
 
     - name: Prepare Debug and Release Keystores
