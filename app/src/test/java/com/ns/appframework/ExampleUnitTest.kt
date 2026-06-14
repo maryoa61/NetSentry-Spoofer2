@@ -43,4 +43,28 @@ class ExampleUnitTest {
     assertTrue(jsonConfig.contains("myfakesni.com")) // custom SNI override
     assertTrue(jsonConfig.contains("/testpath")) // WebSocket path
   }
+
+  @Test
+  fun configAutomator_resolvesCorrectSniAndIp() {
+    val cleanIpsList = listOf(
+      com.ns.appframework.data.CleanIpEntity(ipAddress = "104.16.48.59", latencyMs = 70, provider = "Cloudflare", operatorName = "همراه اول (MCI)", status = "OPTIMAL"),
+      com.ns.appframework.data.CleanIpEntity(ipAddress = "172.64.36.42", latencyMs = 90, provider = "Cloudflare", operatorName = "ایرانسل (Irancell)", status = "OPTIMAL")
+    )
+
+    // Test SNI mapping for MCI (Hamrah-e-Aval)
+    val mciSni = com.ns.appframework.data.ConfigAutomator.getFakeSniForOperator("همراه اول (MCI)")
+    assertEquals("tg.mci.ir", mciSni)
+
+    // Test SNI mapping for Irancell
+    val irancellSni = com.ns.appframework.data.ConfigAutomator.getFakeSniForOperator("ایرانسل (Irancell)")
+    assertEquals("app.snapp.ir", irancellSni)
+
+    // Test best IP resolution for MCI
+    val resolvedMciIp = com.ns.appframework.data.ConfigAutomator.selectBestCleanIp(cleanIpsList, "همراه اول (MCI)")
+    assertEquals("104.16.48.59", resolvedMciIp)
+
+    // Test best IP resolution for Irancell
+    val resolvedIrancellIp = com.ns.appframework.data.ConfigAutomator.selectBestCleanIp(cleanIpsList, "ایرانسل (Irancell)")
+    assertEquals("172.64.36.42", resolvedIrancellIp)
+  }
 }

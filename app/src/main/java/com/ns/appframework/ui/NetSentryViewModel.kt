@@ -682,19 +682,28 @@ class NetSentryViewModel(
     val vpnConnectionState: StateFlow<com.ns.appframework.VpnConnectionState> = com.ns.appframework.XrayVpnService.vpnState
     val activeVpnRemarks: StateFlow<String?> = com.ns.appframework.XrayVpnService.activeNodeRemarks
 
-    fun startVpnService(context: android.content.Context) {
+    fun startVpnService(context: android.content.Context, operatorOverride: String? = null) {
         val nodeEntity = _selectedNodeForBuilder.value ?: return
-        val cleanIp = _selectedCleanIpForBuilder.value
-        val fakeSni = _customSniForBuilder.value
+        val currentCleanIps = cleanIps.value
+        val targetOperator = operatorOverride ?: _scannedOperator.value
 
-        val parsed = V2RayParser.parse(nodeEntity.rawConfig)
-        if (parsed != null) {
-            val generatedJson = XrayConfigGenerator.generateJson(parsed, cleanIp, fakeSni)
-            
+        // Execute ConfigAutomator dynamic parameter optimization
+        val autoResult = com.ns.appframework.data.ConfigAutomator.automate(
+            node = nodeEntity,
+            cleanIps = currentCleanIps,
+            operatorName = targetOperator
+        )
+
+        if (autoResult != null) {
+            // Instantly sync resolved optimal properties back to the GUI states for maximum clarity
+            _selectedCleanIpForBuilder.value = autoResult.cleanIp
+            _customSniForBuilder.value = autoResult.fakeSni
+            updateBuiltConfig()
+
             val intent = android.content.Intent(context, com.ns.appframework.XrayVpnService::class.java).apply {
                 action = com.ns.appframework.XrayVpnService.ACTION_CONNECT
-                putExtra(com.ns.appframework.XrayVpnService.EXTRA_CONFIG_JSON, generatedJson)
-                putExtra(com.ns.appframework.XrayVpnService.EXTRA_REMARKS, nodeEntity.name)
+                putExtra(com.ns.appframework.XrayVpnService.EXTRA_CONFIG_JSON, autoResult.configJson)
+                putExtra(com.ns.appframework.XrayVpnService.EXTRA_REMARKS, autoResult.nodeRemarks)
             }
             
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

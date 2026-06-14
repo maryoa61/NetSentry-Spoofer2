@@ -2105,6 +2105,7 @@ fun ConfigBuilderPage(viewModel: NetSentryViewModel) {
   val finalConfigUrl by viewModel.builtConfigUrl.collectAsStateWithLifecycle()
   val vpnState by viewModel.vpnConnectionState.collectAsStateWithLifecycle()
   val activeVpnRemarks by viewModel.activeVpnRemarks.collectAsStateWithLifecycle()
+  val operatorName by viewModel.scannedOperator.collectAsStateWithLifecycle()
 
   val context = LocalContext.current
   val clipboardManager = LocalClipboardManager.current
@@ -2472,6 +2473,66 @@ fun ConfigBuilderPage(viewModel: NetSentryViewModel) {
             }
           }
 
+          // Target ISP Bypass Context Selector
+          Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+            Text(
+              text = "۲. اپراتور هدف (ISP Bypass Context):",
+              color = PureWhite,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            val operators = listOf(
+              "همراه اول (MCI)",
+              "ایرانسل (Irancell)",
+              "رایتل (Rightel)",
+              "مخابرات (WiFi)"
+            )
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              operators.forEach { op ->
+                val isSelected = (operatorName == op)
+                Box(
+                  modifier = Modifier
+                    .background(
+                      if (isSelected) CyberCyan.copy(alpha = 0.15f) else SpaceBg,
+                      shape = RoundedCornerShape(6.dp)
+                    )
+                    .border(
+                      1.dp,
+                      if (isSelected) CyberCyan else GeoBorder,
+                      shape = RoundedCornerShape(6.dp)
+                    )
+                    .clickable {
+                      viewModel.setScannedOperator(op)
+                      selectedNode?.let { node ->
+                        com.ns.appframework.data.ConfigAutomator.automate(
+                          node = node,
+                          cleanIps = viewModel.cleanIps.value,
+                          operatorName = op
+                        )?.let { autoRes ->
+                          viewModel.selectCleanIpForBuilder(autoRes.cleanIp)
+                          viewModel.updateCustomSniForBuilder(autoRes.fakeSni)
+                        }
+                      }
+                    }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                  Text(
+                    text = op,
+                    color = if (isSelected) CyberCyan else SilverText,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                  )
+                }
+              }
+            }
+          }
+
           // Clean IP selected indicator
           Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2479,7 +2540,7 @@ fun ConfigBuilderPage(viewModel: NetSentryViewModel) {
           ) {
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
               Text(
-                text = "۲. آی‌پی تمیز فعال:",
+                text = "۳. آی‌پی تمیز فعال:",
                 color = PureWhite,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold
@@ -2507,7 +2568,7 @@ fun ConfigBuilderPage(viewModel: NetSentryViewModel) {
           // Fake SNI host for bypass
           Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
             Text(
-              text = "۳. آی‌پی / دامنه فریب ترافیک (Fake SNI):",
+              text = "۴. آی‌پی / دامنه فریب ترافیک (Fake SNI):",
               color = PureWhite,
               fontSize = 11.sp,
               fontWeight = FontWeight.Bold
