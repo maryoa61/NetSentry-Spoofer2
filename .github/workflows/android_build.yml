@@ -1,10 +1,83 @@
-name: Debug Files
-on: [push]
+name: Android Build
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
-  debug-files:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: List EVERYTHING
-        run: ls -R
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Optimize gradle.properties for CI
+      run: |
+        echo "Updating gradle.properties for CI..."
+        sed -i 's/kotlin.compiler.execution.strategy=in-process/kotlin.compiler.execution.strategy=daemon/g' gradle.properties
+        sed -i 's/org.gradle.configuration-cache=true/org.gradle.configuration-cache=false/g' gradle.properties
+        cat gradle.properties
+
+    - name: Prepare Debug and Release Keystores
+      run: |
+        if [ -f debug.keystore.base64 ]; then
+          echo "Decoding existing debug.keystore.base64..."
+          base64 -d debug.keystore.base64 > debug.keystore
+        else
+          echo "debug.keystore.base64 not found. Generating a new debug.keystore..."
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+        fi
+        
+        # =========================================================================
+        # INSTRUCTIONS FOR AUTOMATIC PRODUCTION SIGNING IN GITHUB ACTIONS
+        # =========================================================================
+        # 1. Encode your active '.jks' keystore file locally to base64 format:
+        #    - Linux/macOS: base64 -i your-keystore.jks | tr -d '\n' > keystore_base64.txt
+        #    - Windows powershell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("your-keystore.jks")) | Out-File -encoding ascii keystore_base64.txt
+        # 2. Go to your GitHub repository -> Settings -> Secrets and variables -> Actions
+        # 3. Create the following Secrets (New repository secret):
+        #    - RELEASE_KEYSTORE_BASE64: Copy content from keystore_base64.txt
+        #    - RELEASE_STORE_PASSWORD: Your keystore store password
+        #    - RELEASE_KEY_ALIAS: Your signing key alias
+        #    - RELEASE_KEY_PASSWORD: Your signing key password
+        # =========================================================================
+        
+        if [ ! -z "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+          echo "Found RELEASE_KEYSTORE_BASE64 in GitHub Secrets. Decoding production keystore..."
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > my-upload-key.jks
+        elif [ -f my-upload-key.jks.base64 ]; then
+          echo "Decoding existing my-upload-key.jks.base64..."
+          base64 -d my-upload-key.jks.base64 > my-upload-key.jks
+        else
+          echo "my-upload-key.jks or secrets not found. Generating fallback release my-upload-key.jks..."
+          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Release,O=Android,C=US"
+        fi
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Build Release APK
+      run: gradle assembleRelease --no-configuration-cache -Pkotlin.compiler.execution.strategy=daemon -Porg.gradle.configuration-cache=false
+      env:
+        STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD || 'android' }}
+        KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || 'upload' }}
+        KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}
+
+    - name: Upload Release APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-release-apk
+        path: app/build/outputs/apk/release/app-release.apk
