@@ -1,21 +1,35 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+🛡️ NetSentry Spoofer
+سامانه‌ی جامع مدیریت شبکه، اسکن هوشمند CDN و موتور پیشرفته SNI Spoofer
 
-# Run and deploy your AI Studio app
+NetSentry Spoofer یک ابزار حرفه‌ای و چندمنظوره است که برای کاربرانِ شبکه، توسعه‌دهندگان و علاقه‌مندان به دنیایِ آزادِ اینترنت طراحی شده است. این پروژه با هدف ترکیبِ قدرتِ تحلیلِ شبکه و رابطِ کاربری مدرنِ IDE-Style توسعه یافته تا مدیریتِ کانفیگ‌ها و عبور از محدودیت‌ها را به یک تجربه مهندسی‌شده تبدیل کند.
 
-This contains everything you need to run your app locally.
+✨ ویژگی‌های کلیدی (Features)
+🔍 اسکنر فوق‌سریع آی‌پی (scanner.sh): شناسایی دقیق آی‌پی‌های تمیز (Clean IPs) برای سرویس‌های Cloudflare, Akamai, Fastly و... با قابلیت فیلترینگ هوشمند اپراتورها.
 
-View your app in AI Studio: https://ai.studio/apps/466129a1-e1f9-401a-84ef-476510bf2d18
+🎭 موتور SNI Spoofer (spoofer.py): تکنیک پیشرفته شبیه‌سازی بسته‌های TLS برای دور زدن فیلترینگ بدون نیاز به سرور واسط.
 
-## Run Locally
+⚡ بهینه‌ساز نودهای V2Ray (nodes.json): مدیریت متمرکز، پارس اتوماتیک لینک‌ها، و تست پینگ (TCP Ping) واقعی برای یافتن بهترین سرعت.
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+🏗 بخش Builder (builder.conf): مهندسی مجدد پروتکل‌ها و تولید QR Code درون‌برنامه‌ای برای استفاده آنی در کلاینت‌های موبایل.
 
+📊 داشبورد مانیتورینگ: رصدِ زنده سرعت دانلود/آپلود و حجم ترافیک با رابط کاربری تاریک و مینیمال.
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+🛠 معماری پروژه
+پروژه NetSentry Spoofer با تمرکز بر بهره‌وری بالا طراحی شده است:
+
+رابط کاربری: طراحی شده با تم تاریکِ الهام‌گرفته از IDEها برای دسترسی سریع به ابزارهای مختلف.
+
+هسته پردازشی: بهینه‌سازی شده برای اجرای روان بر روی اندروید، بدون ایجاد سربار روی منابع سخت‌افزاری.
+
+ساختار داده‌ای: ذخیره‌سازی داده‌های نودها و کانفیگ‌ها در ساختار محلی بهینه برای سرعت در فراخوانی.
+
+📁 ساختار ابزارها
+پروژه از سیستم ماژولار زیر برای مدیریت قابلیت‌ها استفاده می‌کند:
+
+scanner.sh : پنل پیکربندی و اسکنر آی‌پی‌های پایدار.
+
+spoofer.py : موتور اصلی تحلیل و شبیه‌سازی بسته‌های شبکه.
+
+nodes.json : بانک داده‌هایِ کانفیگ‌های V2Ray.
+
+builder.conf : تنظیمات نهایی برای خروجی‌گیری و ساخت لینک
