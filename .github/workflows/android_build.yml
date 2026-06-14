@@ -25,7 +25,7 @@ jobs:
         echo "ksp.useDaemon=false" >> gradle.properties
         cat gradle.properties
 
-    - name: Prepare Debug Keystore
+    - name: Prepare Debug and Release Keystores
       run: |
         if [ -f debug.keystore.base64 ]; then
           echo "Decoding existing debug.keystore.base64..."
@@ -33,6 +33,14 @@ jobs:
         else
           echo "debug.keystore.base64 not found. Generating a new debug.keystore..."
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+        fi
+        
+        if [ -f my-upload-key.jks.base64 ]; then
+          echo "Decoding existing my-upload-key.jks.base64..."
+          base64 -d my-upload-key.jks.base64 > my-upload-key.jks
+        else
+          echo "my-upload-key.jks.base64 not found. Generating a new release my-upload-key.jks..."
+          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Release,O=Android,C=US"
         fi
 
     - name: Set up JDK 17
@@ -45,11 +53,14 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 
-    - name: Build Debug APK
-      run: gradle assembleDebug --no-configuration-cache -Pkotlin.compiler.execution.strategy=daemon -Porg.gradle.configuration-cache=false
+    - name: Build Release APK
+      run: gradle assembleRelease --no-configuration-cache -Pkotlin.compiler.execution.strategy=daemon -Porg.gradle.configuration-cache=false
+      env:
+        STORE_PASSWORD: "android"
+        KEY_PASSWORD: "android"
 
-    - name: Upload Debug APK Artifact
+    - name: Upload Release APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: app-release-apk
+        path: app/build/outputs/apk/release/app-release.apk
