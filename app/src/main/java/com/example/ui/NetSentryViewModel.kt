@@ -1,8 +1,8 @@
-package com.ns.appframework.ui
+package com.example.ui
 
 import android.app.Application
 import androidx.lifecycle.*
-import com.ns.appframework.data.*
+import com.example.data.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -676,40 +676,6 @@ class NetSentryViewModel(
     private fun stopAutoTestingNodes() {
         autoTestJob?.cancel()
         autoTestJob = null
-    }
-
-    // --- VPN Service Actions ---
-    val vpnConnectionState: StateFlow<com.ns.appframework.VpnConnectionState> = com.ns.appframework.XrayVpnService.vpnState
-    val activeVpnRemarks: StateFlow<String?> = com.ns.appframework.XrayVpnService.activeNodeRemarks
-
-    fun startVpnService(context: android.content.Context) {
-        val nodeEntity = _selectedNodeForBuilder.value ?: return
-        val cleanIp = _selectedCleanIpForBuilder.value
-        val fakeSni = _customSniForBuilder.value
-
-        val parsed = V2RayParser.parse(nodeEntity.rawConfig)
-        if (parsed != null) {
-            val generatedJson = XrayConfigGenerator.generateJson(parsed, cleanIp, fakeSni)
-            
-            val intent = android.content.Intent(context, com.ns.appframework.XrayVpnService::class.java).apply {
-                action = com.ns.appframework.XrayVpnService.ACTION_CONNECT
-                putExtra(com.ns.appframework.XrayVpnService.EXTRA_CONFIG_JSON, generatedJson)
-                putExtra(com.ns.appframework.XrayVpnService.EXTRA_REMARKS, nodeEntity.name)
-            }
-            
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
-        }
-    }
-
-    fun stopVpnService(context: android.content.Context) {
-        val intent = android.content.Intent(context, com.ns.appframework.XrayVpnService::class.java).apply {
-            action = com.ns.appframework.XrayVpnService.ACTION_DISCONNECT
-        }
-        context.startService(intent)
     }
 
     override fun onCleared() {

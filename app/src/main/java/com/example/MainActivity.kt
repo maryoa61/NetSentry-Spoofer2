@@ -1,14 +1,10 @@
-package com.ns.appframework
+package com.example
 
 import android.app.Application
 import android.os.Bundle
 import android.widget.Toast
-import android.net.VpnService
-import android.app.Activity
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -43,9 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ns.appframework.data.*
-import com.ns.appframework.ui.*
-import com.ns.appframework.ui.theme.*
+import com.example.data.*
+import com.example.ui.*
+import com.example.ui.theme.*
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -2103,22 +2099,10 @@ fun ConfigBuilderPage(viewModel: NetSentryViewModel) {
   val selectedIp by viewModel.selectedCleanIpForBuilder.collectAsStateWithLifecycle()
   val customSni by viewModel.customSniForBuilder.collectAsStateWithLifecycle()
   val finalConfigUrl by viewModel.builtConfigUrl.collectAsStateWithLifecycle()
-  val vpnState by viewModel.vpnConnectionState.collectAsStateWithLifecycle()
-  val activeVpnRemarks by viewModel.activeVpnRemarks.collectAsStateWithLifecycle()
 
   val context = LocalContext.current
   val clipboardManager = LocalClipboardManager.current
   var isQrVisible by remember { mutableStateOf(false) }
-
-  val vpnLauncher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.StartActivityForResult()
-  ) { result ->
-    if (result.resultCode == Activity.RESULT_OK) {
-      viewModel.startVpnService(context)
-    } else {
-      Toast.makeText(context, "تایید صلاحیت دسترسی VPN لغو شد.", Toast.LENGTH_SHORT).show()
-    }
-  }
 
   LazyColumn(
     modifier = Modifier
@@ -2272,160 +2256,6 @@ fun ConfigBuilderPage(viewModel: NetSentryViewModel) {
                   )
                 }
               }
-            }
-          }
-        }
-      }
-    }
-
-    // VPN Connection Control Center Card
-    item {
-      Card(
-        colors = CardDefaults.cardColors(containerColor = SpaceCard),
-        border = BorderStroke(1.dp, if (vpnState == VpnConnectionState.CONNECTED) CyberCyan else GeoBorder),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Column(
-          modifier = Modifier.padding(14.dp),
-          horizontalAlignment = Alignment.End,
-          verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Box(
-              modifier = Modifier
-                .background(
-                  when (vpnState) {
-                    VpnConnectionState.CONNECTED -> TechGreen.copy(alpha = 0.15f)
-                    VpnConnectionState.CONNECTING -> CyberPurple.copy(alpha = 0.15f)
-                    else -> TerminalGray.copy(alpha = 0.15f)
-                  },
-                  shape = RoundedCornerShape(6.dp)
-                )
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-              Text(
-                text = when (vpnState) {
-                  VpnConnectionState.CONNECTED -> "متصل"
-                  VpnConnectionState.CONNECTING -> "در حال اتصال"
-                  else -> "غیرفعال"
-                },
-                color = when (vpnState) {
-                  VpnConnectionState.CONNECTED -> TechGreen
-                  VpnConnectionState.CONNECTING -> CyberCyan
-                  else -> SilverText
-                },
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-              )
-            }
-            Text(
-              text = "⚡️ کنترلر تونل هوشمند VPN client",
-              color = PureWhite,
-              fontSize = 12.sp,
-              fontWeight = FontWeight.Bold
-            )
-          }
-
-          Text(
-            text = "بر اساس پارامترهای انتخاب شده زیر، یک تونل اختصاصی VPN ایمن از نوع Xray بر روی سیستم عامل مستقر کنید.",
-            color = TerminalGray,
-            fontSize = 10.sp,
-            textAlign = TextAlign.Right,
-            modifier = Modifier.fillMaxWidth()
-          )
-
-          if (vpnState == VpnConnectionState.CONNECTED) {
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .background(SpaceBg, shape = RoundedCornerShape(8.dp))
-                .border(1.dp, GeoBorder, shape = RoundedCornerShape(8.dp))
-                .padding(8.dp),
-              horizontalArrangement = Arrangement.End,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "پروفایل فعال: ${activeVpnRemarks ?: "کانفیگ سفارشی"}",
-                color = CyberCyan,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Right
-              )
-              Spacer(modifier = Modifier.width(6.dp))
-              Box(
-                modifier = Modifier
-                  .size(8.dp)
-                  .background(TechGreen, shape = CircleShape)
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(2.dp))
-
-          Button(
-            onClick = {
-              if (vpnState == VpnConnectionState.CONNECTED) {
-                viewModel.stopVpnService(context)
-              } else {
-                if (selectedNode == null) {
-                  Toast.makeText(context, "لطفاً ابتدا یک نود مبنا انتخاب کنید.", Toast.LENGTH_SHORT).show()
-                } else {
-                  val prepareIntent = VpnService.prepare(context)
-                  if (prepareIntent != null) {
-                    vpnLauncher.launch(prepareIntent)
-                  } else {
-                    viewModel.startVpnService(context)
-                  }
-                }
-              }
-            },
-            colors = ButtonDefaults.buttonColors(
-              containerColor = when (vpnState) {
-                VpnConnectionState.CONNECTED -> TechRed
-                VpnConnectionState.CONNECTING -> CyberPurple
-                else -> CyberCyan
-              },
-              contentColor = Color(0xFF0F1015)
-            ),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier
-              .fillMaxWidth()
-              .height(42.dp)
-              .testTag("vpn_connect_button")
-          ) {
-            Row(
-              horizontalArrangement = Arrangement.spacedBy(6.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              if (vpnState == VpnConnectionState.CONNECTING) {
-                CircularProgressIndicator(
-                  color = Color(0xFF0F1015),
-                  modifier = Modifier.size(16.dp),
-                  strokeWidth = 2.dp
-                )
-              } else {
-                Icon(
-                  imageVector = if (vpnState == VpnConnectionState.CONNECTED) Icons.Default.Close else Icons.Default.PlayArrow,
-                  contentDescription = "VPN Action Icon",
-                  modifier = Modifier.size(16.dp),
-                  tint = Color(0xFF0F1015)
-                )
-              }
-              Text(
-                text = when (vpnState) {
-                  VpnConnectionState.CONNECTED -> "قطع اتصال از تونل امن"
-                  VpnConnectionState.CONNECTING -> "در حال ایجاد اتصال شبکه‌ای..."
-                  else -> "برقراری اتصال VPN امن"
-                },
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F1015)
-              )
             }
           }
         }
