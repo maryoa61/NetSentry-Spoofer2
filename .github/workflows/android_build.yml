@@ -7,15 +7,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      # ۱. این مرحله رو اضافه کن تا لیست فایل‌ها رو ببینیم و مطمئن بشیم gradlew کجاست
+      - name: List files in root directory
+        run: ls -la
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
       
-      # قبل از هر چیز، مجوز اجرای فایل gradlew را صادر کنید
+      # ۲. مطمئن شو که فایل دقیقاً همون‌جاست که گیت‌هاب انتظار داره
       - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+        run: |
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+          else
+            echo "Error: gradlew file not found in $(pwd)"
+            exit 1
+          fi
 
       - name: Decode Keystore
         run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.jks
